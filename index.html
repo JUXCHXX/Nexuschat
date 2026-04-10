@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusChat — IA Conversacional</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050810;
+  --surface: #090d1a;
+  --surface2: #0d1225;
+  --surface3: #111830;
+  --border: rgba(0,255,180,0.1);
+  --accent: #00ffb4;
+  --accent2: #00b4ff;
+  --accent3: #ff6b6b;
+  --text: #e0f0ff;
+  --muted: #4a6080;
+  --glow: rgba(0,255,180,0.12);
+  --glow2: rgba(0,180,255,0.08);
+  --user-bg: #0a1f35;
+  --ai-bg: #050f1a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fondo animado */
+#bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0,255,180,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,180,255,0.05) 0%, transparent 60%),
+    #050810;
+}
+
+.grid-lines {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.04;
+  background-image:
+    linear-gradient(rgba(0,255,180,0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,180,0.5) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Layout */
+.app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
+
+/* Header */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  background: rgba(9,13,26,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.logo-area { display: flex; align-items: center; gap: 0.75rem; }
+
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; box-shadow: 0 0 20px rgba(0,255,180,0.3);
+  animation: pulse-logo 3s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0%,100% { box-shadow: 0 0 15px rgba(0,255,180,0.3); }
+  50% { box-shadow: 0 0 30px rgba(0,255,180,0.6); }
+}
+
+.logo-text {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900; font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 0.05em;
+}
+
+.logo-sub { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; }
+
+/* Personalidades */
+.personas-wrap { display: flex; gap: 0.4rem; flex-wrap: wrap; flex: 1; justify-content: center; }
+
+.persona-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; padding: 0.35rem 0.7rem; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  letter-spacing: 0.05em;
+}
+
+.persona-btn:hover { color: var(--accent); border-color: var(--accent); }
+.persona-btn.active {
+  background: rgba(0,255,180,0.1); color: var(--accent);
+  border-color: var(--accent); box-shadow: 0 0 10px rgba(0,255,180,0.15);
+}
+
+/* Header actions */
+.header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+.icon-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); width: 34px; height: 34px; border-radius: 8px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; transition: all 0.2s; flex-shrink: 0;
+}
+
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 0.4rem 1.5rem;
+  background: rgba(5,8,16,0.8);
+  border-bottom: 1px solid rgba(0,255,180,0.06);
+  font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+.stat-item { display: flex; align-items: center; gap: 0.4rem; }
+.stat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.stat-val { color: var(--accent); font-weight: 500; }
+
+/* Chat area */
+.chat-area {
+  flex: 1; overflow-y: auto; padding: 1.5rem;
+  scroll-behavior: smooth;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.chat-area::-webkit-scrollbar { width: 4px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Mensajes */
+.msg {
+  display: flex; gap: 0.75rem; animation: msgIn 0.3s ease;
+  max-width: 800px;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.user { flex-direction: row-reverse; align-self: flex-end; }
+.msg.ai { align-self: flex-start; }
+
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+
+.msg.ai .msg-avatar {
+  background: linear-gradient(135deg, rgba(0,255,180,0.2), rgba(0,180,255,0.2));
+  border: 1px solid rgba(0,255,180,0.3);
+}
+
+.msg.user .msg-avatar {
+  background: linear-gradient(135deg, rgba(0,180,255,0.2), rgba(0,100,200,0.2));
+  border: 1px solid rgba(0,180,255,0.3);
+}
+
+.msg-body { display: flex; flex-direction: column; gap: 0.25rem; max-width: calc(100% - 44px); }
+
+.msg-meta {
+  font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em;
+  display: flex; gap: 0.5rem; align-items: center;
+}
+
+.msg.user .msg-meta { justify-content: flex-end; }
+
+.msg-bubble {
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.msg.ai .msg-bubble {
+  background: var(--ai-bg);
+  border: 1px solid var(--border);
+  border-top-left-radius: 4px;
+  color: var(--text);
+}
+
+.msg.user .msg-bubble {
+  background: var(--user-bg);
+  border: 1px solid rgba(0,180,255,0.2);
+  border-top-right-radius: 4px;
+  color: var(--text);
+}
+
+/* Cursor streaming */
+.cursor {
+  display: inline-block; width: 2px; height: 14px;
+  background: var(--accent); margin-left: 2px; vertical-align: middle;
+  animation: blink-cursor 0.7s ease-in-out infinite;
+}
+@keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Comandos rápidos */
+.quick-cmds {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0 1.5rem 0.75rem;
+  flex-shrink: 0;
+}
+
+.quick-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; padding: 0.3rem 0.75rem; border-radius: 20px;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em;
+}
+
+.quick-btn:hover { color: var(--accent2); border-color: var(--accent2); background: rgba(0,180,255,0.05); }
+
+/* Input area */
+.input-area {
+  padding: 1rem 1.5rem 1.2rem;
+  background: rgba(9,13,26,0.95);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  display: flex; gap: 0.75rem; align-items: flex-end;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 0.75rem 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrap:focus-within {
+  border-color: rgba(0,255,180,0.4);
+  box-shadow: 0 0 0 3px rgba(0,255,180,0.06), 0 0 20px rgba(0,255,180,0.05);
+}
+
+#msg-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; resize: none; max-height: 120px;
+  line-height: 1.5;
+}
+
+#msg-input::placeholder { color: var(--muted); }
+
+.send-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #050810; width: 36px; height: 36px; border-radius: 10px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; transition: opacity 0.2s, transform 0.1s; flex-shrink: 0;
+  font-weight: 700; box-shadow: 0 0 15px rgba(0,255,180,0.2);
+}
+
+.send-btn:hover { opacity: 0.85; }
+.send-btn:active { transform: scale(0.95); }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.input-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 0.5rem; font-size: 0.6rem; color: var(--muted);
+}
+
+/* Welcome screen */
+.welcome {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; text-align: center; gap: 1rem; padding: 2rem;
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+.welcome-icon {
+  font-size: 3.5rem;
+  animation: floatWelcome 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(0,255,180,0.4));
+}
+
+@keyframes floatWelcome { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+.welcome h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.8rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.welcome p { font-size: 0.8rem; color: var(--muted); max-width: 400px; line-height: 1.7; }
+
+.welcome-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+  max-width: 500px; width: 100%; margin-top: 0.5rem;
+}
+
+.welcome-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1rem; text-align: left;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.welcome-card:hover { border-color: var(--accent); background: rgba(0,255,180,0.04); transform: translateY(-2px); }
+.welcome-card-icon { font-size: 1.2rem; margin-bottom: 0.4rem; }
+.welcome-card-title { font-size: 0.72rem; font-weight: 500; color: var(--text); margin-bottom: 0.2rem; }
+.welcome-card-desc { font-size: 0.62rem; color: var(--muted); }
+
+/* Token counter */
+#token-count { transition: color 0.3s; }
+.token-warn { color: var(--accent3) !important; }
+
+/* Typing indicator */
+.typing-dots { display: flex; gap: 4px; align-items: center; padding: 0.5rem 0; }
+.typing-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+
+/* Modal exportar */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(5,8,16,0.85);
+  display: none; align-items: center; justify-content: center; z-index: 100;
+  backdrop-filter: blur(10px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem; max-width: 360px; width: 90%;
+  animation: fadeIn 0.3s ease;
+}
+.modal h3 { font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--accent); margin-bottom: 1rem; }
+.modal-btns { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; }
+.modal-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; padding: 0.75rem 1rem; border-radius: 10px;
+  cursor: pointer; transition: all 0.2s; text-align: left;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.modal-btn:hover { border-color: var(--accent); color: var(--accent); }
+.modal-close {
+  background: transparent; border: none; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  cursor: pointer; margin-top: 0.5rem; width: 100%; padding: 0.5rem; text-align: center;
+}
+.modal-close:hover { color: var(--text); }
+
+@media (max-width: 600px) {
+  .personas-wrap { display: none; }
+  .stats-bar { display: none; }
+  .welcome-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div class="grid-lines"></div>
+
+<div class="app">
+  <!-- Header -->
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">🤖</div>
+      <div>
+        <div class="logo-text">NexusChat</div>
+        <div class="logo-sub">POWERED BY GROQ · LLAMA 3.3</div>
+      </div>
+    </div>
+
+    <div class="personas-wrap">
+      <button class="persona-btn active" onclick="setPersona('asistente')" data-p="asistente">⚡ Asistente</button>
+      <button class="persona-btn" onclick="setPersona('dev')" data-p="dev">💻 Dev Expert</button>
+      <button class="persona-btn" onclick="setPersona('coach')" data-p="coach">🔥 Coach</button>
+      <button class="persona-btn" onclick="setPersona('filosofo')" data-p="filosofo">🧠 Filósofo</button>
+      <button class="persona-btn" onclick="setPersona('creativo')" data-p="creativo">🎨 Creativo</button>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" onclick="clearChat()" title="Limpiar chat">🗑️</button>
+      <button class="icon-btn" onclick="abrirExportar()" title="Exportar chat">📥</button>
+    </div>
+  </header>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-dot"></div> ESTADO: <span class="stat-val">ONLINE</span></div>
+    <div class="stat-item">MODELO: <span class="stat-val">llama-3.3-70b</span></div>
+    <div class="stat-item">TOKENS: <span class="stat-val" id="token-count">0</span></div>
+    <div class="stat-item">MENSAJES: <span class="stat-val" id="msg-count">0</span></div>
+    <div class="stat-item">MODO: <span class="stat-val" id="persona-label">Asistente</span></div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area" id="chat-area">
+    <!-- Welcome -->
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🤖</div>
+      <h1>NexusChat</h1>
+      <p>IA conversacional con múltiples personalidades. Elige un modo arriba o comienza a escribir.</p>
+      <div class="welcome-grid">
+        <div class="welcome-card" onclick="sendQuick('¿Qué puedes hacer por mí?')">
+          <div class="welcome-card-icon">⚡</div>
+          <div class="welcome-card-title">¿Qué puedes hacer?</div>
+          <div class="welcome-card-desc">Descubre las capacidades de NexusChat</div>
+        </div>
+        <div class="welcome-card" onclick="sendQuick('Explícame qué es la inteligencia artificial como si tuviera 10 años')">
+          <div class="welcome-card-icon">🧒</div>
+          <div class="welcome-card-title">Explícame como si tuviera 10</div>
+          <div class="welcome-card-desc">Conceptos complejos en lenguaje simple</div>
+        </div>
+        <div class="welcome-card" onclick="sendQuick('Dame ideas de proyectos para mi portafolio de programación')">
+          <div class="welcome-card-icon">💼</div>
+          <div class="welcome-card-title">Ideas de portafolio</div>
+          <div class="welcome-card-desc">Proyectos para destacar como dev</div>
+        </div>
+        <div class="welcome-card" onclick="sendQuick('Escríbeme un poema sobre el código')">
+          <div class="welcome-card-icon">🎨</div>
+          <div class="welcome-card-title">Poema sobre el código</div>
+          <div class="welcome-card-desc">El lado creativo de la tecnología</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comandos rápidos -->
+  <div class="quick-cmds">
+    <button class="quick-btn" onclick="sendQuick('Explícame como si tuviera 5 años')">👶 Como si tuviera 5 años</button>
+    <button class="quick-btn" onclick="sendQuick('Dame un ejemplo de código')">💻 Ejemplo de código</button>
+    <button class="quick-btn" onclick="sendQuick('Resúmelo en 3 puntos')">📋 Resumir en 3 puntos</button>
+    <button class="quick-btn" onclick="sendQuick('Dame una perspectiva diferente')">🔄 Otra perspectiva</button>
+    <button class="quick-btn" onclick="sendQuick('¿Cuáles son los pros y contras?')">⚖️ Pros y contras</button>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="msg-input" placeholder="Escribe tu mensaje... (Enter para enviar)" rows="1"></textarea>
+      <button class="send-btn" id="send-btn" onclick="enviarMensaje()">➤</button>
+    </div>
+    <div class="input-footer">
+      <span>Enter para enviar · Shift+Enter para nueva línea</span>
+      <span id="char-count">0 caracteres</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal exportar -->
+<div class="modal-overlay" id="modal-exportar">
+  <div class="modal">
+    <h3>📥 Exportar Chat</h3>
+    <p style="font-size:0.75rem;color:var(--muted)">Elige el formato de exportación:</p>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="exportar('txt')">📄 Texto plano (.txt)</button>
+      <button class="modal-btn" onclick="exportar('json')">🗂️ JSON estructurado (.json)</button>
+      <button class="modal-btn" onclick="exportar('md')">📝 Markdown (.md)</button>
+    </div>
+    <button class="modal-close" onclick="cerrarModal()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+const API_KEY = "TU_API_KEY_AQUI";
+const MODEL   = 'llama-3.3-70b-versatile';
+const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+/* =========================================================
+   PERSONALIDADES
+   ========================================================= */
+const PERSONAS = {
+  asistente: {
+    label: 'Asistente',
+    prompt: 'Eres NexusChat, un asistente de IA moderno, amigable y muy útil. Responde en español de forma clara, concisa y precisa. Usa emojis ocasionalmente para hacer las respuestas más dinámicas.'
+  },
+  dev: {
+    label: 'Dev Expert',
+    prompt: 'Eres NexusChat en modo Dev Expert. Eres un ingeniero de software senior con 15 años de experiencia. Responde en español, priorizando soluciones técnicas precisas, código limpio y buenas prácticas. Usa bloques de código cuando sea relevante.'
+  },
+  coach: {
+    label: 'Coach',
+    prompt: 'Eres NexusChat en modo Coach. Eres un coach motivacional y de productividad energético y positivo. Responde en español con entusiasmo, usa analogías poderosas, haz preguntas reflexivas y ayuda al usuario a alcanzar su máximo potencial. ¡Sé inspirador!'
+  },
+  filosofo: {
+    label: 'Filósofo',
+    prompt: 'Eres NexusChat en modo Filósofo. Eres un filósofo erudito que piensa profundamente. Responde en español con reflexiones profundas, cita filósofos cuando sea relevante, cuestiona los supuestos y lleva las conversaciones a un nivel más profundo de significado.'
+  },
+  creativo: {
+    label: 'Creativo',
+    prompt: 'Eres NexusChat en modo Creativo. Eres un artista y pensador creativo sin límites. Responde en español con imaginación desbordante, metáforas originales, ideas poco convencionales y perspectivas sorprendentes. Rompe los moldes del pensamiento convencional.'
+  }
+};
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+let historial = [];       // [{ role, content }]
+let personaActual = 'asistente';
+let totalTokens = 0;
+let enviando = false;
+
+/* =========================================================
+   PERSONALIDAD
+   ========================================================= */
+function setPersona(p) {
+  personaActual = p;
+  document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-p="${p}"]`).classList.add('active');
+  document.getElementById('persona-label').textContent = PERSONAS[p].label;
+}
+
+/* =========================================================
+   RENDER MENSAJES
+   ========================================================= */
+function ocultarWelcome() {
+  const w = document.getElementById('welcome-screen');
+  if (w) w.remove();
+}
+
+function crearMsgEl(role, content = '') {
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const ahora = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  const avatar = isUser ? '👤' : '🤖';
+  const nombre = isUser ? 'Tú' : `NexusChat · ${PERSONAS[personaActual].label}`;
+
+  div.innerHTML = `
+    <div class="msg-avatar">${avatar}</div>
+    <div class="msg-body">
+      <div class="msg-meta"><span>${nombre}</span><span>${ahora}</span></div>
+      <div class="msg-bubble" id="bubble-${Date.now()}">${content}</div>
+    </div>`;
+
+  document.getElementById('chat-area').appendChild(div);
+  scrollAbajo();
+  return div.querySelector('.msg-bubble');
+}
+
+function scrollAbajo() {
+  const area = document.getElementById('chat-area');
+  area.scrollTop = area.scrollHeight;
+}
+
+/* =========================================================
+   ENVIAR MENSAJE CON STREAMING
+   ========================================================= */
+async function enviarMensaje() {
+  const input = document.getElementById('msg-input');
+  const texto = input.value.trim();
+  if (!texto || enviando) return;
+
+  ocultarWelcome();
+  enviando = true;
+  document.getElementById('send-btn').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('char-count').textContent = '0 caracteres';
+
+  // Agregar mensaje usuario
+  historial.push({ role: 'user', content: texto });
+  crearMsgEl('user', escapeHtml(texto));
+  actualizarStats();
+
+  // Burbuja IA con typing
+  const burbuja = crearMsgEl('assistant', '<div class="typing-dots"><span></span><span></span><span></span></div>');
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: PERSONAS[personaActual].prompt },
+          ...historial
+        ],
+        max_tokens: 1024,
+        temperature: 0.8,
+        stream: true
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'Error de API');
+    }
+
+    // Streaming
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let respuestaCompleta = '';
+    burbuja.innerHTML = '<span class="cursor"></span>';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+
+      for (const line of lines) {
+        const data = line.replace('data: ', '');
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            respuestaCompleta += delta;
+            burbuja.innerHTML = formatearTexto(respuestaCompleta) + '<span class="cursor"></span>';
+            // Tokens estimados
+            totalTokens += delta.split(' ').length;
+            document.getElementById('token-count').textContent = totalTokens;
+            if (totalTokens > 3000) document.getElementById('token-count').classList.add('token-warn');
+            scrollAbajo();
+          }
+        } catch {}
+      }
+    }
+
+    // Finalizar
+    burbuja.innerHTML = formatearTexto(respuestaCompleta);
+    historial.push({ role: 'assistant', content: respuestaCompleta });
+    actualizarStats();
+
+  } catch (err) {
+    burbuja.innerHTML = `<span style="color:var(--accent3)">⚠️ Error: ${err.message}</span>`;
+  }
+
+  enviando = false;
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+
+/* =========================================================
+   FORMATO DE TEXTO
+   ========================================================= */
+function formatearTexto(txt) {
+  return txt
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // Bloques de código
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre style="background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin:0.5rem 0;overflow-x:auto;font-size:0.78rem"><code>$2</code></pre>')
+    // Código inline
+    .replace(/`([^`]+)`/g, '<code style="background:var(--surface3);padding:0.1em 0.4em;border-radius:4px;font-size:0.85em">$1</code>')
+    // Negrita
+    .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent)">$1</strong>')
+    // Cursiva
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // Saltos de línea
+    .replace(/\n/g, '<br>');
+}
+
+function escapeHtml(txt) {
+  return txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+/* =========================================================
+   STATS
+   ========================================================= */
+function actualizarStats() {
+  const msgs = historial.filter(m => m.role === 'user').length;
+  document.getElementById('msg-count').textContent = msgs;
+}
+
+/* =========================================================
+   COMANDOS RÁPIDOS
+   ========================================================= */
+function sendQuick(texto) {
+  document.getElementById('msg-input').value = texto;
+  enviarMensaje();
+}
+
+/* =========================================================
+   LIMPIAR CHAT
+   ========================================================= */
+function clearChat() {
+  historial = [];
+  totalTokens = 0;
+  document.getElementById('token-count').textContent = '0';
+  document.getElementById('token-count').classList.remove('token-warn');
+  document.getElementById('msg-count').textContent = '0';
+  const area = document.getElementById('chat-area');
+  area.innerHTML = `
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🤖</div>
+      <h1>NexusChat</h1>
+      <p>Chat limpiado. ¡Comienza una nueva conversación!</p>
+    </div>`;
+}
+
+/* =========================================================
+   EXPORTAR
+   ========================================================= */
+function abrirExportar() {
+  if (!historial.length) { alert('No hay mensajes para exportar.'); return; }
+  document.getElementById('modal-exportar').classList.add('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-exportar').classList.remove('show');
+}
+
+function exportar(formato) {
+  const fecha = new Date().toLocaleDateString('es-CO').replace(/\//g,'-');
+  let contenido = '', nombre = '', tipo = '';
+
+  if (formato === 'txt') {
+    contenido = historial.map(m =>
+      `[${m.role === 'user' ? 'TÚ' : 'NEXUSCHAT'}]\n${m.content}\n`
+    ).join('\n---\n\n');
+    nombre = `nexuschat-${fecha}.txt`;
+    tipo = 'text/plain';
+  } else if (formato === 'json') {
+    contenido = JSON.stringify({ fecha, persona: personaActual, historial }, null, 2);
+    nombre = `nexuschat-${fecha}.json`;
+    tipo = 'application/json';
+  } else if (formato === 'md') {
+    contenido = `# Chat NexusChat — ${fecha}\n**Modo:** ${PERSONAS[personaActual].label}\n\n` +
+      historial.map(m =>
+        `### ${m.role === 'user' ? '👤 Tú' : '🤖 NexusChat'}\n${m.content}`
+      ).join('\n\n---\n\n');
+    nombre = `nexuschat-${fecha}.md`;
+    tipo = 'text/markdown';
+  }
+
+  const blob = new Blob([contenido], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+  cerrarModal();
+}
+
+/* =========================================================
+   EVENTOS INPUT
+   ========================================================= */
+const input = document.getElementById('msg-input');
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    enviarMensaje();
+  }
+});
+
+input.addEventListener('input', () => {
+  // Auto resize
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  // Char count
+  document.getElementById('char-count').textContent = `${input.value.length} caracteres`;
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modal-exportar').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-exportar')) cerrarModal();
+});
+</script>
+</body>
+</html>
