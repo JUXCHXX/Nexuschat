@@ -65,7 +65,7 @@ Abre `index.html` directamente en tu navegador. No necesitas instalar nada.
 
 ## 🛠️ Hecho con
 
-- HTML + CSS + JavaScript vanilla
+- HTML
 - [Groq API](https://groq.com/) — inferencia ultrarrápida
 
 ---
