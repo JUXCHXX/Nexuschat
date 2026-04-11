@@ -84,6 +84,14 @@ Si quieres tener NexusChat directo en tu Android, aquí te dejo la APK lista par
 
 <br/>
 
+<img src="Cap1.png" width="30%" alt="screenshot 1" />
+&nbsp;&nbsp;
+<img src="Cap2.png" width="30%" alt="screenshot 2" />
+&nbsp;&nbsp;
+<img src="Cap3.png" width="30%" alt="screenshot 3" />
+
+<br/><br/>
+
 [![Descargar APK](https://img.shields.io/badge/⬇️_Descargar_APK-NexusChat_v1.0.0-00ff9f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JUXCHXX/Nexuschat/releases/download/v1.0.0/app-debug.apk)
 
 <br/>
