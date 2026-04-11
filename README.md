@@ -70,6 +70,28 @@ Abre `index.html` directamente en tu navegador. No necesitas instalar nada.
 
 ---
 
+---
+
+## 📱 ¿La quieres en tu celular?
+
+<div align="center">
+
+<img src="LOGO_NEXUS.png" width="120" alt="NexusChat Logo" />
+
+<br/><br/>
+
+Si quieres tener NexusChat directo en tu Android, aquí te dejo la APK lista para instalar. Sin Play Store, sin complicaciones — la descargas, la instalas y listo.
+
+<br/>
+
+[![Descargar APK](https://img.shields.io/badge/⬇️_Descargar_APK-NexusChat_v1.0.0-00ff9f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/JUXCHXX/Nexuschat/releases/download/v1.0.0/app-debug.apk)
+
+<br/>
+
+> ⚠️ Antes de instalar activa **"Instalar apps de fuentes desconocidas"** en los ajustes de tu Android.
+
+</div>
+
 ## 📄 Licencia
 
 MIT — libre para usar y modificar.
